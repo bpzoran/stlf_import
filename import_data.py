@@ -22,7 +22,29 @@ def import_ts_data():
     """
     connection_string = f'mssql+pyodbc://@{config.server}/{config.database}?driver={config.driver}'
     engine = create_engine(connection_string)
-    table_created = False
+    # Create table if not created
+    # Generate SQL to create table
+    create_table_sql = f"""
+                        CREATE TABLE {config.table_name_power_data} (
+                            {config.timestamp_field} DATETIME,
+                            {config.ts_field} VARCHAR(MAX),
+                            {config.file_name_field} VARCHAR(MAX),
+                            {config.active_power_column_name_template}_1 VARCHAR(MAX),
+                            {config.active_power_column_name_template}_2 VARCHAR(MAX),
+                            {config.active_power_column_name_template}_3 VARCHAR(MAX),
+                            {config.active_power_column_name_template}_4 VARCHAR(MAX),
+                            {config.active_power_column_name_template}_5 VARCHAR(MAX),
+                            {config.active_power_column_name_template}_6 VARCHAR(MAX),
+                            {config.active_power_column_name_template}_7 VARCHAR(MAX),
+                            {config.active_power_column_name_template}_8 VARCHAR(MAX),
+                            {config.active_power_column_name_template}_9 VARCHAR(MAX),
+                            {config.active_power_column_name_template}_10 VARCHAR(MAX)
+                        );
+                        """
+
+    with engine.connect() as connection:
+        connection.execute(text(f"DROP TABLE IF EXISTS {config.table_name_power_data}"))
+        connection.execute(text(create_table_sql))
     for ts_folder in os.listdir(config.main_folder):
         print(ts_folder)
         ts_folder_path = os.path.join(config.main_folder, ts_folder)
@@ -71,33 +93,6 @@ def import_ts_data():
                             row_data.extend([None] * (10 - len(aktivna_snaga_columns)))
                             processed_data.append(row_data)
 
-                    # Create table if not created
-                    if not table_created:
-                        # Generate SQL to create table
-                        create_table_sql = f"""
-                        CREATE TABLE {config.table_name} (
-                            {config.timestamp_field} DATETIME,
-                            {config.ts_field} VARCHAR(MAX),
-                            {config.file_name_field} VARCHAR(MAX),
-                            {config.active_power_column_name_template}_1 VARCHAR(MAX),
-                            {config.active_power_column_name_template}_2 VARCHAR(MAX),
-                            {config.active_power_column_name_template}_3 VARCHAR(MAX),
-                            {config.active_power_column_name_template}_4 VARCHAR(MAX),
-                            {config.active_power_column_name_template}_5 VARCHAR(MAX),
-                            {config.active_power_column_name_template}_6 VARCHAR(MAX),
-                            {config.active_power_column_name_template}_7 VARCHAR(MAX),
-                            {config.active_power_column_name_template}_8 VARCHAR(MAX),
-                            {config.active_power_column_name_template}_9 VARCHAR(MAX),
-                            {config.active_power_column_name_template}_10 VARCHAR(MAX)
-                        );
-                        """
-
-                        with engine.connect() as connection:
-                            connection.execute(text(f"DROP TABLE IF EXISTS {config.table_name}"))
-                            connection.execute(text(create_table_sql))
-
-                        table_created = True
-
                     columns = [config.timestamp_field, config.ts_field, config.file_name_field,
                                f'{config.active_power_column_name_template}_1',
                                f'{config.active_power_column_name_template}_2',
@@ -111,7 +106,7 @@ def import_ts_data():
                                f'{config.active_power_column_name_template}_10']
                     processed_df = pd.DataFrame(processed_data, columns=columns)
 
-                    processed_df.to_sql(config.table_name, engine, if_exists='append', index=False)
+                    processed_df.to_sql(config.table_name_power_data, engine, if_exists='append', index=False)
 
     print("Data imported successfully.")
 
