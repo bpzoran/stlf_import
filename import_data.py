@@ -76,6 +76,19 @@ def import_ts_data():
                             continue
 
                         if current_date is not None:
+                            contains_load = False
+                            for k in range(1, len(row)):
+                                load_string = row.iloc[k]
+                                if load_string is None:
+                                    continue
+                                try:
+                                    float(load_string)
+                                    contains_load = True
+                                    break
+                                except Exception:
+                                    continue
+                            if not contains_load:
+                                continue
                             time = row.iloc[0]
                             if time == '24:00':
                                 time = '23:00'
